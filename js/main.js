@@ -82,7 +82,7 @@ function init () {
     scene.add(character);
 
     window.addEventListener('resize', onWindowResize, false);
-    window.addEventListener('dblclick', onDoubleClick, false);
+    window.addEventListener('click', onDoubleClick, false);
     console.log('Double click to change animation');
     animate();
 
@@ -115,13 +115,23 @@ function onWindowResize () {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+var mylatesttap;
 function onDoubleClick () {
-  if (actualAnimation == arrAnimations.length - 1) {
-    actualAnimation = 0;
+  var now = new Date().getTime();
+  var timesince = now - mylatesttap;
+  if ((timesince < 600) && (timesince > 0)) {
+    if (actualAnimation == arrAnimations.length - 1) {
+      actualAnimation = 0;
+    } else {
+      actualAnimation++;
+    }
+    fadeAction(arrAnimations[actualAnimation]);
+
   } else {
-    actualAnimation++;
+    // too much time to be a doubletap
   }
-  fadeAction(arrAnimations[actualAnimation]);
+
+  mylatesttap = new Date().getTime();
 
 }
 
