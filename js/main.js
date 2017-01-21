@@ -3,7 +3,7 @@ var clock, container, camera, scene, renderer, controls, listener;
 var ground, character;
 var light;
 var textureLoader = new THREE.TextureLoader();
-var loader = new THREE.JSONLoader();
+var loader = new THREE.ObjectLoader();
 var isLoaded = false;
 var action = {}, mixer;
 var activeActionName = 'idle';
@@ -50,46 +50,120 @@ function init () {
 
   });
 
-  loader.load('./models/eva-animated.json', function (geometry, materials) {
-    materials.forEach(function (material) {
-      material.skinning = true;
-    });
-    character = new THREE.SkinnedMesh(
-      geometry,
-      new THREE.MeshFaceMaterial(materials)
-    );
+  var scope = this;
 
-    mixer = new THREE.AnimationMixer(character);
+  loader.load( './models/eva-animated.json', function( loadedObject ) {
 
-    action.hello = mixer.clipAction(geometry.animations[ 0 ]);
-    action.idle = mixer.clipAction(geometry.animations[ 1 ]);
-    action.run = mixer.clipAction(geometry.animations[ 3 ]);
-    action.walk = mixer.clipAction(geometry.animations[ 4 ]);
+			// The exporter does not currently allow exporting a skinned mesh by itself
+			// so we must fish it out of the hierarchy it is embedded in (scene)
+			loadedObject.traverse( function( object ) {
 
-    action.hello.setEffectiveWeight(1);
-    action.idle.setEffectiveWeight(1);
-    action.run.setEffectiveWeight(1);
-    action.walk.setEffectiveWeight(1);
+				if ( object instanceof THREE.SkinnedMesh ) {
+console.log('ssss');
+					scope.skinnedMesh = object;
 
-    action.hello.setLoop(THREE.LoopOnce, 0);
-    action.hello.clampWhenFinished = true;
+				}
 
-    action.hello.enabled = true;
-    action.idle.enabled = true;
-    action.run.enabled = true;
-    action.walk.enabled = true;
+			} );
+// console.log(scope.skinnedMesh.geometry);
+// console.log(scope.skinnedMesh.material);
+      scope.skinnedMesh.material.skinning = true;
+			character = new THREE.SkinnedMesh( scope.skinnedMesh.geometry, scope.skinnedMesh.material );
 
-    scene.add(character);
+      mixer = new THREE.AnimationMixer(character);
 
-    window.addEventListener('resize', onWindowResize, false);
-    window.addEventListener('click', onDoubleClick, false);
-    console.log('Double click to change animation');
-    animate();
+       action.hello = mixer.clipAction(character.geometry.animations[ 0 ]);
+       action.idle = mixer.clipAction(character.geometry.animations[ 1 ]);
+       action.run = mixer.clipAction(character.geometry.animations[ 3 ]);
+       action.walk = mixer.clipAction(character.geometry.animations[ 4 ]);
 
-    isLoaded = true;
+       action.hello.setEffectiveWeight(1);
+       action.idle.setEffectiveWeight(1);
+       action.run.setEffectiveWeight(1);
+       action.walk.setEffectiveWeight(1);
 
-    action.idle.play();
-  });
+       action.hello.setLoop(THREE.LoopOnce, 0);
+       action.hello.clampWhenFinished = true;
+
+       action.hello.enabled = true;
+       action.idle.enabled = true;
+       action.run.enabled = true;
+       action.walk.enabled = true;
+
+       scene.add(character);
+
+       window.addEventListener('resize', onWindowResize, false);
+       window.addEventListener('click', onDoubleClick, false);
+       console.log('Double click to change animation');
+       animate();
+
+       isLoaded = true;
+
+       action.idle.play();
+      //
+			// // If we didn't successfully find the mesh, bail out
+			// if ( scope.skinnedMesh == undefined ) {
+      //
+			// 	console.log( 'unable to find skinned mesh in ' + url );
+			// 	return;
+      //
+			// }
+      //
+			// scope.material.skinning = true;
+      //
+			// scope.mixer = new THREE.AnimationMixer( scope );
+      //
+			// // Create the animations
+			// for ( var i = 0; i < scope.geometry.animations.length; ++ i ) {
+      //
+			// 	scope.mixer.clipAction( scope.geometry.animations[ i ] );
+      //
+			// }
+      //
+			// // Loading is complete, fire the callback
+			// if ( onLoad !== undefined ) onLoad();
+
+		} );
+  // loader.load('./models/eva-animated.json', function (geometry, materials) {
+  //   materials.forEach(function (material) {
+  //     material.skinning = true;
+  //   });
+  //   character = new THREE.SkinnedMesh(
+  //     geometry,
+  //     new THREE.MeshFaceMaterial(materials)
+  //   );
+  //
+  //   mixer = new THREE.AnimationMixer(character);
+  //
+  //   action.hello = mixer.clipAction(geometry.animations[ 0 ]);
+  //   action.idle = mixer.clipAction(geometry.animations[ 1 ]);
+  //   action.run = mixer.clipAction(geometry.animations[ 3 ]);
+  //   action.walk = mixer.clipAction(geometry.animations[ 4 ]);
+  //
+  //   action.hello.setEffectiveWeight(1);
+  //   action.idle.setEffectiveWeight(1);
+  //   action.run.setEffectiveWeight(1);
+  //   action.walk.setEffectiveWeight(1);
+  //
+  //   action.hello.setLoop(THREE.LoopOnce, 0);
+  //   action.hello.clampWhenFinished = true;
+  //
+  //   action.hello.enabled = true;
+  //   action.idle.enabled = true;
+  //   action.run.enabled = true;
+  //   action.walk.enabled = true;
+  //
+  //   scene.add(character);
+  //
+  //   window.addEventListener('resize', onWindowResize, false);
+  //   window.addEventListener('click', onDoubleClick, false);
+  //   console.log('Double click to change animation');
+  //   animate();
+  //
+  //   isLoaded = true;
+  //
+  //   action.idle.play();
+  // });
 }
 
 function fadeAction (name) {
